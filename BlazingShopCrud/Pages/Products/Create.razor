@@ -1,0 +1,67 @@
+@page "/products/create"
+@inject AppDbContext _context
+@inject NavigationManager _navigationManager
+
+<h1>Cadastrar um novo produto</h1>
+
+<EditForm Model="_product" OnValidSubmit="@HandleSubmitAsync">
+    <DataAnnotationsValidator/>
+    <ValidationSummary/>
+    <div class="mb-3">
+        <label for="Title" class="form-label">Título</label>
+        <InputText class="form-control" type="text" id="Title" @bind-Value="_product.Title"/>         
+    </div>
+    <div class="mb-3">
+        <label for="Price" class="form-label">Preço</label>
+        <InputNumber class="form-control" type="number" id="Price" @bind-Value="_product.Price"/>
+    </div>
+    <div class="mb-3">
+        <label for="CategoryId" class="form-label">Categoria</label>
+        <InputSelect id="CategoryId" class="form-control"  @bind-Value="_product.CategoryId">            
+           
+            @foreach(var category in _categories)
+            {
+                <option value="@category.Id">@category.Title</option>
+            }            
+
+        </InputSelect>        
+    </div>
+    <div class="mb-3">
+        <button class="btn btn-success" type="submit">Salvar</button>
+    </div>
+
+    @if(!string.IsNullOrEmpty(_errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @_errorMessage
+        </div>
+    }
+</EditForm>
+
+@code{
+    Product _product = new ();
+    List<Category> _categories = new();
+    string? _errorMessage = null;
+    protected override async Task OnInitializedAsync()
+    {
+        _categories = await _context
+                .Categories
+                .AsNoTracking()
+                .ToListAsync();
+        
+        _product.CategoryId = _categories[0].Id;
+    }
+
+    async Task HandleSubmitAsync()
+    {
+        try
+        {
+            await _context.Products.AddAsync(_product);
+            await _context.SaveChangesAsync(); 
+            _navigationManager.NavigateTo("/products");           
+        }
+        catch{
+            _errorMessage = "Falha ao salvar os dados.";
+        }        
+    }
+}
